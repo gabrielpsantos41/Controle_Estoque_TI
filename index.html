@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Estoque - Suporte TI</title>
+  
+  <!-- CSS Personalizado -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome Ícones -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="#">
+        <i class="fa-solid fa-boxes-stacked me-2"></i>Controle de Periféricos | Suporte TI
+      </a>
+    </div>
+  </nav>
+
+  <div class="container">
+    
+    <!-- Dashboard Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card card-dashboard bg-white p-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <span class="text-muted small">Total de Tipos de Itens</span>
+              <h3 class="fw-bold mb-0" id="totalTypes">0</h3>
+            </div>
+            <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+              <i class="fa-solid fa-microchip fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="card card-dashboard bg-white p-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <span class="text-muted small">Total Unidades em Estoque</span>
+              <h3 class="fw-bold mb-0 text-success" id="totalUnits">0</h3>
+            </div>
+            <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success">
+              <i class="fa-solid fa-cubes fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card card-dashboard bg-white p-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <span class="text-muted small">Itens em Estoque Crítico</span>
+              <h3 class="fw-bold mb-0 text-danger" id="criticalItems">0</h3>
+            </div>
+            <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger">
+              <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ações e Busca -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 gap-2">
+      <div class="input-group search-bar me-md-3" style="max-width: 400px;">
+        <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+        <input type="text" id="searchInput" class="form-control" placeholder="Buscar periférico ou categoria..." onkeyup="filterItems()">
+      </div>
+      
+      <button class="btn btn-success fw-bold shadow-sm" onclick="openAddModal()">
+        <i class="fa-solid fa-plus me-1"></i> Cadastrar Novo Periférico
+      </button>
+    </div>
+
+    <!-- Tabela de Estoque -->
+    <div class="table-container mb-5">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Item</th>
+              <th>Categoria</th>
+              <th>Quantidade</th>
+              <th>Mínimo Recomendado</th>
+              <th>Status</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryTable">
+            <!-- Linhas inseridas via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal: Cadastrar / Editar Periférico -->
+  <div class="modal fade" id="modalAddItem" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modalTitle">Cadastrar Periférico</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="itemForm" onsubmit="saveItem(event)">
+          <div class="modal-body">
+            <input type="hidden" id="itemId">
+            
+            <div class="mb-3">
+              <label for="itemName" class="form-label">Nome do Item</label>
+              <input type="text" class="form-control" id="itemName" placeholder="Ex: Cabo DisplayPort 1.8m, Mouse USB Logi" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="itemCategory" class="form-label">Categoria</label>
+              <select class="form-select" id="itemCategory" required>
+                <option value="Cabos">Cabos (VGA, HDMI, DisplayPort, Rede)</option>
+                <option value="Adaptadores">Adaptadores & Conversores</option>
+                <option value="Periféricos Padrão">Periféricos (Mouse, Teclado)</option>
+                <option value="Áudio">Áudio (Headset, Microfone)</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+
+            <div class="row g-2">
+              <div class="col-6 mb-3">
+                <label for="itemQty" class="form-label">Quantidade Inicial</label>
+                <input type="number" min="0" class="form-control" id="itemQty" required>
+              </div>
+              <div class="col-6 mb-3">
+                <label for="itemMinQty" class="form-label">Qtd. Mínima (Alerta)</label>
+                <input type="number" min="1" class="form-control" id="itemMinQty" value="3" required>
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar Item</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Adicionar Entrada em Estoque (Check-in) -->
+  <div class="modal fade" id="modalCheckin" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-success bg-opacity-10">
+          <h5 class="modal-title fw-bold text-success"><i class="fa-solid fa-plus-circle me-1"></i> Adicionar Entrada ao Estoque</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="checkinForm" onsubmit="executeCheckin(event)">
+          <div class="modal-body">
+            <input type="hidden" id="checkinItemId">
+            
+            <div class="alert alert-success py-2" id="checkinItemInfo">
+              Item selecionado: <strong>-</strong>
+            </div>
+
+            <div class="mb-3">
+              <label for="checkinQty" class="form-label">Quantidade a Adicionar</label>
+              <input type="number" min="1" class="form-control" id="checkinQty" value="1" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success fw-bold">Confirmar Entrada</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Dar Baixa em Item (Checkout) -->
+  <div class="modal fade" id="modalCheckout" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-warning bg-opacity-10">
+          <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-minus-circle me-1"></i> Dar Baixa no Estoque</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="checkoutForm" onsubmit="executeCheckout(event)">
+          <div class="modal-body">
+            <input type="hidden" id="checkoutItemId">
+            
+            <div class="alert alert-info py-2" id="checkoutItemInfo">
+              Item selecionado: <strong>-</strong>
+            </div>
+
+            <div class="mb-3">
+              <label for="checkoutQty" class="form-label">Quantidade a Retirar</label>
+              <input type="number" min="1" class="form-control" id="checkoutQty" value="1" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="checkoutReason" class="form-label">Solicitante / Destino (Opcional)</label>
+              <input type="text" class="form-control" id="checkoutReason" placeholder="Ex: Envio para Chamado #1234 / Sala 402">
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-warning fw-bold">Confirmar Saída</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Módulo de Conexão com Firebase Realtime Database -->
+  <!-- Módulo de Conexão com Firebase Realtime Database -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, push, set, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDkSXUska-3qjS3Uf_O_k_8nGo45qgF7aA",
+      authDomain: "controle-estoque-ti-5c2d0.firebaseapp.com",
+      databaseURL: "https://controle-estoque-ti-5c2d0-default-rtdb.firebaseio.com",
+      projectId: "controle-estoque-ti-5c2d0",
+      storageBucket: "controle-estoque-ti-5c2d0.firebasestorage.app",
+      messagingSenderId: "121185631190",
+      appId: "1:121185631190:web:ae17f21955e4aaa8f18277",
+      measurementId: "G-2WH8JDB7E8"
+    };
+
+    // Inicializa o Firebase e o Banco de Dados
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Exporta referências para o window tornando-as visíveis no script.js
+    window.db = db;
+    window.dbRef = ref;
+    window.dbOnValue = onValue;
+    window.dbPush = push;
+    window.dbSet = set;
+    window.dbUpdate = update;
+    window.dbRemove = remove;
+    window.dbGet = get; // <--- Adicionado
+  </script>
+
+  <!-- Script da Aplicação -->
+  <script src="js/script.js"></script>
+</body>
+</html>
