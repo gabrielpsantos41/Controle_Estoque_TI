@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Estoque - Suporte TI</title>
+  <title>Controle de Estoque & Headsets - Suporte TI</title>
   
   <!-- CSS Personalizado -->
   <link rel="stylesheet" href="css/style.css">
@@ -11,15 +11,31 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- FontAwesome Ícones -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- SheetJS para Importação e Exportação de Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
-    <div class="container">
+    <div class="container d-flex justify-content-between align-items-center">
       <a class="navbar-brand fw-bold" href="#">
-        <i class="fa-solid fa-boxes-stacked me-2"></i>Controle de Periféricos | Suporte TI GRB
+        <i class="fa-solid fa-boxes-stacked me-2"></i>Controle de Periféricos & Headsets | Suporte TI
       </a>
+      
+      <!-- Seção de Usuário Logado -->
+      <div id="userAccountSection" class="d-flex align-items-center text-white">
+        <span class="me-3" id="loggedUserDisplay"><i class="fa-solid fa-user-circle me-1"></i> Não autenticado</span>
+        <button class="btn btn-outline-light btn-sm me-2" onclick="openChangePasswordModal()" id="btnChangePass" style="display:none;">
+          <i class="fa-solid fa-key me-1"></i> Mudar Senha
+        </button>
+        <button class="btn btn-light btn-sm text-primary fw-bold" onclick="openLoginModal()" id="btnLogin">
+          <i class="fa-solid fa-right-to-bracket me-1"></i> Entrar
+        </button>
+        <button class="btn btn-danger btn-sm fw-bold" onclick="logoutUser()" id="btnLogout" style="display:none;">
+          <i class="fa-solid fa-right-from-bracket me-1"></i> Sair
+        </button>
+      </div>
     </div>
   </nav>
 
@@ -27,11 +43,11 @@
     
     <!-- Dashboard Cards -->
     <div class="row g-3 mb-4">
-      <div class="col-md-4">
+      <div class="col-md-3">
         <div class="card card-dashboard bg-white p-3">
           <div class="d-flex align-items-center justify-content-between">
             <div>
-              <span class="text-muted small">Total de Tipos de Itens</span>
+              <span class="text-muted small">Total Tipos de Itens</span>
               <h3 class="fw-bold mb-0" id="totalTypes">0</h3>
             </div>
             <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
@@ -41,11 +57,11 @@
         </div>
       </div>
       
-      <div class="col-md-4">
+      <div class="col-md-3">
         <div class="card card-dashboard bg-white p-3">
           <div class="d-flex align-items-center justify-content-between">
             <div>
-              <span class="text-muted small">Total Unidades em Estoque</span>
+              <span class="text-muted small">Total Periféricos em Estoque</span>
               <h3 class="fw-bold mb-0 text-success" id="totalUnits">0</h3>
             </div>
             <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success">
@@ -55,11 +71,25 @@
         </div>
       </div>
 
-      <div class="col-md-4">
+      <div class="col-md-3">
         <div class="card card-dashboard bg-white p-3">
           <div class="d-flex align-items-center justify-content-between">
             <div>
-              <span class="text-muted small">Itens em Estoque Crítico</span>
+              <span class="text-muted small">Headsets Disponíveis / Saídas</span>
+              <h3 class="fw-bold mb-0 text-info" id="headsetSummary">0 / 0</h3>
+            </div>
+            <div class="bg-info bg-opacity-10 p-3 rounded-circle text-info">
+              <i class="fa-solid fa-headset fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card card-dashboard bg-white p-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <span class="text-muted small">Estoque Crítico</span>
               <h3 class="fw-bold mb-0 text-danger" id="criticalItems">0</h3>
             </div>
             <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger">
@@ -70,39 +100,211 @@
       </div>
     </div>
 
-    <!-- Ações e Busca -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 gap-2">
-      <div class="input-group search-bar me-md-3" style="max-width: 400px;">
-        <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-        <input type="text" id="searchInput" class="form-control" placeholder="Buscar periférico ou categoria..." onkeyup="filterItems()">
-      </div>
+    <!-- Navegação de Abas -->
+    <ul class="nav nav-tabs mb-3" id="inventoryTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-item nav-link active fw-bold" id="tab-inventory" data-bs-toggle="tab" data-bs-target="#content-inventory" type="button" role="tab">
+          <i class="fa-solid fa-list-check me-1"></i> Estoque Geral de Periféricos
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-item nav-link fw-bold text-dark" id="tab-headsets" data-bs-toggle="tab" data-bs-target="#content-headsets" type="button" role="tab">
+          <i class="fa-solid fa-headset me-1 text-primary"></i> Registro Geral de Headsets
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="inventoryTabsContent">
       
-      <button class="btn btn-success fw-bold shadow-sm" onclick="openAddModal()">
-        <i class="fa-solid fa-plus me-1"></i> Cadastrar Novo Periférico
-      </button>
+      <!-- ABA 1: ESTOQUE GERAL -->
+      <div class="tab-pane fade show active" id="content-inventory" role="tabpanel">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 gap-2">
+          <div class="input-group search-bar me-md-3" style="max-width: 400px;">
+            <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Buscar periférico ou categoria..." onkeyup="filterItems()">
+          </div>
+          
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-success fw-bold shadow-sm" onclick="exportToExcel('estoque')">
+              <i class="fa-solid fa-file-excel me-1"></i> Exportar Estoque Excel
+            </button>
+            <button class="btn btn-success fw-bold shadow-sm" onclick="openAddModal()">
+              <i class="fa-solid fa-plus me-1"></i> Cadastrar Periférico
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container mb-5">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Item</th>
+                  <th>Categoria</th>
+                  <th>Quantidade</th>
+                  <th>Mínimo Recomendado</th>
+                  <th>Status</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTable">
+                <!-- Linhas inseridas via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 2: REGISTRO DE HEADSETS -->
+      <div class="tab-pane fade" id="content-headsets" role="tabpanel">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 gap-2">
+          <div class="input-group search-bar me-md-3" style="max-width: 400px;">
+            <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+            <input type="text" id="searchHeadsetLog" class="form-control" placeholder="Buscar por ticket, carteira, situação..." onkeyup="filterHeadsetLogs()">
+          </div>
+          
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary fw-bold shadow-sm" onclick="openImportModal()">
+              <i class="fa-solid fa-file-import me-1"></i> Importar Planilha Excel
+            </button>
+            <button class="btn btn-outline-success fw-bold shadow-sm" onclick="exportToExcel('headsets')">
+              <i class="fa-solid fa-file-excel me-1"></i> Exportar Tabela (Excel)
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container mb-5">
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0 text-center" id="headsetLogsTable">
+              <thead class="table-dark">
+                <tr>
+                  <th>Modelo (UE)</th>
+                  <th>Marca</th>
+                  <th>Status</th>
+                  <th>Situação</th>
+                  <th>Chamado / Carteira / Destino</th>
+                  <th>Data/Hora Registro</th>
+                  <th>Técnico Responsável</th>
+                  <th>Ações (Exclusiva Gabriel)</th>
+                </tr>
+              </thead>
+              <tbody id="headsetLogsTableBody">
+                <!-- Linhas carregadas do Firebase -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Tabela de Estoque -->
-    <div class="table-container mb-5">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Item</th>
-              <th>Categoria</th>
-              <th>Quantidade</th>
-              <th>Mínimo Recomendado</th>
-              <th>Status</th>
-              <th class="text-end">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="inventoryTable">
-            <!-- Linhas inseridas via JS -->
-          </tbody>
-        </table>
+  </div>
+
+  <!-- Modal: Importar Excel de Headsets -->
+  <div class="modal fade" id="modalImportExcel" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-file-excel me-2"></i> Importar Registros do Excel</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="importExcelForm" onsubmit="executeExcelImport(event)">
+          <div class="modal-body">
+            <div class="alert alert-info small">
+              <i class="fa-solid fa-circle-info me-1"></i> Selecione um arquivo <strong>.xlsx</strong> ou <strong>.xls</strong> contendo as colunas: <br>
+              <code>UE | MARCA | STATUS | SITUAÇÃO | CHAMADO</code>
+            </div>
+
+            <div class="mb-3">
+              <label for="excelFileInput" class="form-label fw-bold">Arquivo Excel</label>
+              <input class="form-control" type="file" id="excelFileInput" accept=".xlsx, .xls" required>
+            </div>
+
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="clearExistingCheck">
+              <label class="form-check-label text-danger fw-bold" for="clearExistingCheck">
+                Substituir/Limpar registros anteriores antes de importar (opcional)
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success fw-bold" id="btnConfirmImport">
+              <i class="fa-solid fa-upload me-1"></i> Processar Importação
+            </button>
+          </div>
+        </form>
       </div>
     </div>
+  </div>
 
+  <!-- Modal: Login de Usuário -->
+  <div class="modal fade" id="modalLogin" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-lock me-2"></i> Identificação do Técnico</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="loginForm" onsubmit="executeLogin(event)">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="loginUserSelect" class="form-label font-weight-bold">Selecione seu Nome</label>
+              <select class="form-select" id="loginUserSelect" required>
+                <option value="">-- Selecione o Técnico --</option>
+                <option value="Claudio">Claudio</option>
+                <option value="Pedro">Pedro</option>
+                <option value="Gabriel">Gabriel (Administrador / Permissão de Exclusão)</option>
+                <option value="Joao">Joao</option>
+                <option value="Anderson">Anderson</option>
+                <option value="Davi">Davi</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="loginPassword" class="form-label">Senha</label>
+              <input type="password" class="form-control" id="loginPassword" placeholder="Digite sua senha" required>
+              <small class="text-muted">Senha inicial padrão: <code>123Mudar</code></small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary fw-bold">Entrar no Sistema</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Alterar Senha -->
+  <div class="modal fade" id="modalChangePass" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-warning">
+          <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-key me-2"></i> Alterar Senha de Acesso</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="changePassForm" onsubmit="executeChangePassword(event)">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Usuário Ativo</label>
+              <input type="text" class="form-control" id="changePassUserDisplay" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="currentPassInput" class="form-label">Senha Atual</label>
+              <input type="password" class="form-control" id="currentPassInput" required>
+            </div>
+            <div class="mb-3">
+              <label for="newPassInput" class="form-label">Nova Senha</label>
+              <input type="password" class="form-control" id="newPassInput" required minlength="4">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-warning fw-bold">Salvar Nova Senha</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <!-- Modal: Cadastrar / Editar Periférico -->
@@ -119,7 +321,7 @@
             
             <div class="mb-3">
               <label for="itemName" class="form-label">Nome do Item</label>
-              <input type="text" class="form-control" id="itemName" placeholder="Ex: Cabo DisplayPort 1.8m, Mouse USB Logi" required>
+              <input type="text" class="form-control" id="itemName" placeholder="Ex: Mouse USB Logi, Cabo HDMI" required>
             </div>
             
             <div class="mb-3">
@@ -154,7 +356,7 @@
     </div>
   </div>
 
-  <!-- Modal: Adicionar Entrada em Estoque (Check-in) -->
+  <!-- Modal: Entrada de Estoque (Check-in) -->
   <div class="modal fade" id="modalCheckin" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -184,7 +386,7 @@
     </div>
   </div>
 
-  <!-- Modal: Dar Baixa em Item (Checkout) -->
+  <!-- Modal: Dar Baixa / Saída de Periféricos -->
   <div class="modal fade" id="modalCheckout" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -201,13 +403,26 @@
             </div>
 
             <div class="mb-3">
+              <label for="checkoutTech" class="form-label fw-bold text-primary">Técnico Responsável</label>
+              <select class="form-select" id="checkoutTech" required>
+                <option value="">-- Selecione quem retirou --</option>
+                <option value="Claudio">Claudio</option>
+                <option value="Pedro">Pedro</option>
+                <option value="Gabriel">Gabriel</option>
+                <option value="Joao">Joao</option>
+                <option value="Anderson">Anderson</option>
+                <option value="Davi">Davi</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
               <label for="checkoutQty" class="form-label">Quantidade a Retirar</label>
               <input type="number" min="1" class="form-control" id="checkoutQty" value="1" required>
             </div>
 
             <div class="mb-3">
-              <label for="checkoutReason" class="form-label">Solicitante / Destino (Opcional)</label>
-              <input type="text" class="form-control" id="checkoutReason" placeholder="Ex: Envio para Chamado #1234 / Sala 402">
+              <label for="checkoutDestination" class="form-label fw-bold">Número do Ticket OU Carteira / Destino</label>
+              <input type="text" class="form-control" id="checkoutDestination" placeholder="Ex: Chamado #514249, Pernambucanas, Carrefour, Filial" required>
             </div>
 
           </div>
@@ -224,7 +439,6 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <!-- Módulo de Conexão com Firebase Realtime Database -->
-  <!-- Módulo de Conexão com Firebase Realtime Database -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, push, set, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -240,11 +454,9 @@
       measurementId: "G-2WH8JDB7E8"
     };
 
-    // Inicializa o Firebase e o Banco de Dados
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Exporta referências para o window tornando-as visíveis no script.js
     window.db = db;
     window.dbRef = ref;
     window.dbOnValue = onValue;
@@ -252,7 +464,7 @@
     window.dbSet = set;
     window.dbUpdate = update;
     window.dbRemove = remove;
-    window.dbGet = get; // <--- Adicionado
+    window.dbGet = get;
   </script>
 
   <!-- Script da Aplicação -->
