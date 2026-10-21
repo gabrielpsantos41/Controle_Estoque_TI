@@ -141,7 +141,7 @@
                 <tr>
                   <th>Item</th>
                   <th>Categoria</th>
-                  <th>Quantidade</th>
+                  <th>Quantidade Disponível</th>
                   <th>Mínimo Recomendado</th>
                   <th>Status</th>
                   <th class="text-end">Ações</th>
@@ -185,7 +185,7 @@
                   <th>Chamado / Carteira / Destino</th>
                   <th>Data/Hora Registro</th>
                   <th>Técnico Responsável</th>
-                  <th>Ações (Exclusiva Gabriel)</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody id="headsetLogsTableBody">
@@ -198,6 +198,69 @@
 
     </div>
 
+  </div>
+
+  <!-- Modal: Editar Registro Individual de Headset -->
+  <div class="modal fade" id="modalEditHeadset" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Editar Registro de Headset</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="editHeadsetForm" onsubmit="saveHeadsetSingleEdit(event)">
+          <div class="modal-body">
+            <input type="hidden" id="editHeadsetId">
+            
+            <div class="mb-3">
+              <label for="editHeadsetModel" class="form-label fw-bold">Modelo (UE)</label>
+              <input type="text" class="form-control" id="editHeadsetModel" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="editHeadsetBrand" class="form-label fw-bold">Marca</label>
+              <input type="text" class="form-control" id="editHeadsetBrand" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="editHeadsetStockStatus" class="form-label fw-bold">Status do Estoque</label>
+              <input type="text" class="form-control" id="editHeadsetStockStatus" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="editHeadsetDeliveryStatus" class="form-label fw-bold">Situação</label>
+              <select class="form-select" id="editHeadsetDeliveryStatus" required onchange="handleStatusChangeInModal()">
+                <option value="NOVO">NOVO (Disponível)</option>
+                <option value="ENTREGUE">ENTREGUE (Saída)</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="editHeadsetDestination" class="form-label fw-bold">Chamado / Carteira / Destino</label>
+              <input type="text" class="form-control" id="editHeadsetDestination" placeholder="Ex: Chamado #514249, DISPONÍVEL EM ESTOQUE">
+            </div>
+
+            <div class="mb-3">
+              <label for="editHeadsetTech" class="form-label fw-bold">Técnico Responsável</label>
+              <select class="form-select" id="editHeadsetTech" required>
+                <option value="Sistema">Sistema / Importação</option>
+                <option value="Claudio">Claudio</option>
+                <option value="Pedro">Pedro</option>
+                <option value="Gabriel">Gabriel</option>
+                <option value="Joao">Joao</option>
+                <option value="Anderson">Anderson</option>
+                <option value="Davi">Davi</option>
+              </select>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary fw-bold">Salvar Alterações</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <!-- Modal: Importar Excel de Headsets -->
