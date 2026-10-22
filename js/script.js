@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 100);
 });
 
-// Sincronização exata dos Headsets Disponíveis com a tabela de Estoque Geral
+// Sincroniza a quantidade de Headsets disponíveis com o Estoque Geral
 async function syncHeadsetStockWithLogs() {
   const availableCount = headsetLogs.filter(l => {
     const sit = (l.statusDelivery || '').toUpperCase();
@@ -146,7 +146,7 @@ function renderTable(filteredItems = null) {
   });
 }
 
-// Renderizar Tabela de Registros de Headsets
+// Renderizar Tabela de Headsets
 function renderHeadsetLogsTable(filteredLogs = null) {
   const tbody = document.getElementById('headsetLogsTableBody');
   const logsToDisplay = filteredLogs || headsetLogs;
@@ -176,10 +176,10 @@ function renderHeadsetLogsTable(filteredLogs = null) {
       <td><small class="text-muted"><i class="fa-regular fa-clock me-1"></i>${log.dateTimeFormatted || 'Inicial'}</small></td>
       <td><span class="badge bg-info text-dark"><i class="fa-solid fa-user me-1"></i>${log.technician || 'Sistema'}</span></td>
       <td>
-        <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditHeadsetModal('${log.id}')" title="Editar Registro">
+        <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditHeadsetModal('${log.id}')" title="Editar Registro (Restrito Gabriel)">
           <i class="fa-solid fa-pen-to-square"></i> Editar
         </button>
-        <button class="btn btn-sm btn-outline-danger" onclick="deleteHeadsetLog('${log.id}')" title="Excluir (Gabriel)">
+        <button class="btn btn-sm btn-outline-danger" onclick="deleteHeadsetLog('${log.id}')" title="Excluir (Restrito Gabriel)">
           <i class="fa-solid fa-trash"></i> Excluir
         </button>
       </td>
@@ -207,8 +207,19 @@ function updateDashboard() {
   document.getElementById('headsetSummary').innerText = `${availableHeadsets} Disp. / ${deliveredHeadsets} Saídas`;
 }
 
-// EDITAR REGISTRO INDIVIDUAL DE HEADSET
+// 🔒 EDITAR REGISTRO INDIVIDUAL DE HEADSET (Apenas usuário Gabriel)
 function openEditHeadsetModal(id) {
+  if (!currentUser) {
+    alert('Acesso negado! Você precisa estar logado para realizar esta ação.');
+    openLoginModal();
+    return;
+  }
+
+  if (currentUser.toLowerCase() !== 'gabriel') {
+    alert('Ação Não Permitida!\nApenas o usuário GABRIEL possui permissão para editar registros nesta tabela.');
+    return;
+  }
+
   const log = headsetLogs.find(l => l.id === id);
   if (!log) return;
 
@@ -235,6 +246,12 @@ function handleStatusChangeInModal() {
 
 async function saveHeadsetSingleEdit(e) {
   e.preventDefault();
+
+  if (!currentUser || currentUser.toLowerCase() !== 'gabriel') {
+    alert('Ação Não Permitida! Apenas o usuário GABRIEL pode salvar alterações.');
+    return;
+  }
+
   const id = document.getElementById('editHeadsetId').value;
   const model = document.getElementById('editHeadsetModel').value.trim();
   const brand = document.getElementById('editHeadsetBrand').value.trim();
@@ -243,7 +260,7 @@ async function saveHeadsetSingleEdit(e) {
   let destination = document.getElementById('editHeadsetDestination').value.trim();
   const technician = document.getElementById('editHeadsetTech').value;
 
-  if (statusDelivery === 'NOVO' && !destination) {
+  if (statusDelivery === 'NOVO' && (!destination || destination === '')) {
     destination = 'DISPONÍVEL EM ESTOQUE';
   }
 
@@ -261,8 +278,11 @@ async function saveHeadsetSingleEdit(e) {
     timestamp: now.toISOString()
   });
 
-  bootstrap.Modal.getInstance(document.getElementById('modalEditHeadset')).hide();
-  alert('Registro atualizado com sucesso!');
+  const modalEl = document.getElementById('modalEditHeadset');
+  const modalInstance = bootstrap.Modal.getInstance(modalEl);
+  if (modalInstance) modalInstance.hide();
+
+  alert('Registro do Headset atualizado com sucesso!');
 }
 
 // IMPORTAR EXCEL
@@ -311,8 +331,7 @@ async function executeExcelImport(e) {
 
       const now = new Date();
       const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
-      const techName = currentUser ? currentUser : 'Importação Excel';
-      const systemName = "Sistema"
+      const systemName = "Sistema";
 
       let countImported = 0;
 
@@ -516,7 +535,7 @@ async function saveItem(e) {
   bootstrap.Modal.getInstance(document.getElementById('modalAddItem')).hide();
 }
 
-// Exclusão restrita ao Gabriel
+// 🔒 Exclusão restrita ao Gabriel
 function deleteHeadsetLog(id) {
   if (!currentUser) {
     alert('Acesso negado! Você precisa estar logado.');
@@ -690,4 +709,4 @@ function exportToExcel(type) {
   XLSX.utils.book_append_sheet(wb, ws, "Relatório");
   
   XLSX.writeFile(wb, fileName);
-} 
+}
